@@ -43,6 +43,15 @@ label variable v106 "followup stroke"
 
 rename v106 followup_stroke
 
+// we have already removed patients to keep only SVD patients. However
+// we also need to remove those with hybrid revasc done.
+
+tab total_hybrid
+
+drop if total_hybrid == 1
+
+
+
 // before going any further, we need to creat the variable for metabolic syndrome
 /* met_s defined as 3/4 --- obesity by bmi, dm, htn, presence of hyperlipedemia 
 in our study we have hyperlip == 0/1, so we can select that as 2 points, we can say that these 
@@ -121,15 +130,12 @@ table1_mc, by(mets) vars( preop_stroke bin \ prior_ohs bin \ ///
 preop_mi bin \ prior_pci bin \ ///
 log_euroscore conts ) nospace percent saving("D:/MIDCAB_DM/table1_1.xlsx", replace)
 
-// see if we have hybrid procedures 
 
-tab total_hybrid  // ? remove hybrid procedures ??
-
-table1_mc, by(mets) vars(convert_onpump bin \ convert_sternotomy bin \  ///
+table1_mc, by(mets) vars (convert_onpump bin \ convert_sternotomy bin \  ///
 surg_time conts \  post_iabp bin \ post_ecmo bin \ post_mi bin \ ///
 postop_cpr bin \ postop_af bin \ post_bypass_revise bin \  ///
 bleeding bin \ stroke bin \ post_dialysis bin \ vent_failure bin \ trach bin \ ///
-los conts ) nospace onecol percent_n  saving("D:/MIDCAB_DM/table1_2.xlsx", replace )
+los conts \ died_inhouse bin) nospace onecol percent_n  saving("D:/MIDCAB_DM/table1_2.xlsx", replace )
 
 // stset data .
 
@@ -139,8 +145,97 @@ stset fupyears, fail(died_total)
 
 sts graph, by(mets) risktable
 
-// 
+// not much difference in survival between groups.
+// plan to use the rstmp2 model with hazard scale 
+
+stpm2 mets copd sex smoke preop_dialysis pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
+
+// now to do the same for diabetes and then obesity.
+// for obesity, we can see the impact of BMI on early outcome.
+
+tab diabetes 
+
+tab1 diabetes ohga insulin newer_antidm // make var for nodm, nonitdm, itdm
+
+gen dm_group = .
+
+replace dm_group = 0 if (diabetes == 0)
+replace dm_group = 1 if (diabetes == 1 & insulin == 0)
+replace dm_group = 2 if (diabetes == 1 & insulin == 1)
+
+tab dm_group // 0 - no dm, 1 - non-itdm, 2 - itdm patients.
+
+stset fupyears, fail(died_total)
+
+sts graph, by(dm_group) risktable // different survival in all 3 groups.
+
+// make table 1 for dm and no dm patients.
+
+table1_mc, by(diabetes) vars(age conts \ sex cat \ ///
+bmi conts \ diabetes bin \ ///
+preop_creat_mg conts \ ///
+preop_aspirin bin \ preop_plavix bin \ preop_dialysis bin \ ///
+smoke bin \ copd bin \ hyperlip bin \ pvd bin \ ///
+lvef conts \ lvfunction cat \ priority cat \ ///
+preop_stroke bin \ prior_ohs bin \ ///
+preop_mi bin \ prior_pci bin \ ///
+log_euroscore conts \ ///
+prior_pci bin) nospace percent onecol ///
+missing saving("D:/MIDCAB_DM/table1_dm.xlsx", replace)
+
+// to look at operative and early postoperative outcome for DM patients.
 
 
-sts graph, by(diabetes) risktable 
+table1_mc, by(diabetes) vars (convert_onpump bin \ convert_sternotomy bin \  ///
+surg_time conts \  post_iabp bin \ post_ecmo bin \ post_mi bin \ ///
+postop_cpr bin \ postop_af bin \ post_bypass_revise bin \  ///
+bleeding bin \ stroke bin \ post_dialysis bin \ vent_failure bin \ trach bin \ ///
+los conts \ died_inhouse bin) nospace onecol percent_n  saving("D:/MIDCAB_DM/table2_dm.xlsx", replace )
 
+// determine age for every ten years.
+
+gen age_10 = age/10
+
+stset fupyears, fail(died_total)
+
+stpm2 age_10 diabetes copd sex smoke preop_dialysis pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
+
+// diabetes is done, now to focus on obesity as an independent variable.
+
+summ bmi, detail
+
+// really large value as highest, so replace at 99th percentile.
+
+replace bmi = 51.2 if (bmi > 53 & bmi < .) 
+
+summ bmi, detail // now bmi values are reasonable.
+
+// create tables according to obesity.
+
+
+table1_mc, by(obese) vars(age conts \ sex cat \ ///
+bmi conts \ diabetes bin \ ///
+preop_creat_mg conts \ ///
+preop_aspirin bin \ preop_plavix bin \ preop_dialysis bin \ ///
+smoke bin \ copd bin \ hyperlip bin \ pvd bin \ ///
+lvef conts \ lvfunction cat \ priority cat \ ///
+preop_stroke bin \ prior_ohs bin \ ///
+preop_mi bin \ prior_pci bin \ ///
+log_euroscore conts \ ///
+prior_pci bin) nospace percent onecol ///
+missing saving("D:/MIDCAB_DM/table1_ob.xlsx", replace)
+
+
+
+table1_mc, by(obese) vars (convert_onpump bin \ convert_sternotomy bin \  ///
+surg_time conts \  post_iabp bin \ post_ecmo bin \ post_mi bin \ ///
+postop_cpr bin \ postop_af bin \ post_bypass_revise bin \  ///
+bleeding bin \ stroke bin \ post_dialysis bin \ vent_failure bin \ trach bin \ ///
+los conts \ died_inhouse bin) nospace onecol percent_n ///
+saving("D:/MIDCAB_DM/table2_ob.xlsx", replace )
+
+sts graph, by(obese)
+
+stpm2 age_10 obese diabetes htn ///
+hpl copd sex smoke preop_dialysis ///
+pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
