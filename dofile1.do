@@ -244,3 +244,28 @@ pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
 // save this dataset.
 
 save "D:/MIDCAB_DM/dataset2.dta", replace 
+
+// graphs for the paper have been created with R.
+// plan to maybe do a spline model with bmi.
+
+// 02/14/2021 - Happy Valentines Day.
+
+use "D:/MIDCAB_DM/dataset2.dta", replace 
+
+// create spline term and then run the stpm2 model using spline term.
+
+
+mkspline bmi_sp = bmi, cubic nknots(3)
+mat bmi_knots = r(knots)
+
+stset fupyears, fail(died_total)
+
+stpm2 age_10 bmi_sp* diabetes htn ///
+hpl copd sex smoke preop_dialysis ///
+pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
+
+
+// after creating model with using bmi as spline term, graph it...
+
+xbrcspline bmi_sp , values(17(0.5)50) ref(30) eform matknots(bmi_knots) gen(ctn hr lb ub) level(95)
+
