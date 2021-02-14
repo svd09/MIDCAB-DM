@@ -7,7 +7,7 @@
 
 library(easypackages)
 libraries(c("survival","tidyverse",
-	"rms","Hmisc","survminer","haven"))
+	"rms","Hmisc","survminer","haven", "readxl"))
 
 df <- read_stata("D:/MIDCAB_DM/dataset2.dta")
 
@@ -98,3 +98,15 @@ ggsurvplot(so,
 
 dev.off()
 
+# for now these graphs are good.
+# will make more graphs depending upon the plan.
+
+# get the dataset for plotting bmi as a spline.
+
+d <- read_excel("D:/MIDCAB_DM/bmi_plot.xlsx", sheet = 1)
+
+glimpse(d)
+
+plot(x = d$bmi, y = d$hr, type = "l", col = "red")
+lines(x = d$bmi, y = d$lb, lty = 2, col = "blue")
+lines(x = d$bmi, y = d$ub, lty = 2, col = "blue")
