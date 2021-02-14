@@ -239,3 +239,8 @@ sts graph, by(obese)
 stpm2 age_10 obese diabetes htn ///
 hpl copd sex smoke preop_dialysis ///
 pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
+
+
+// save this dataset.
+
+save "D:/MIDCAB_DM/dataset2.dta", replace 
