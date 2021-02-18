@@ -110,3 +110,4 @@ glimpse(d)
 plot(x = d$bmi, y = d$hr, type = "l", col = "red")
 lines(x = d$bmi, y = d$lb, lty = 2, col = "blue")
 lines(x = d$bmi, y = d$ub, lty = 2, col = "blue")
+
