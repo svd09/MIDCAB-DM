@@ -269,3 +269,4 @@ pvd i.lvfunction prior_pci, scale(hazard) df(5) eform
 
 xbrcspline bmi_sp , values(17(0.5)50) ref(30) eform matknots(bmi_knots) gen(ctn hr lb ub) level(95)
 
+// this is the good code to use
