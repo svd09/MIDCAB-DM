@@ -126,5 +126,41 @@ tab2dm = print(t2, nonnormal = c("cpb_time", "clamp_time"))
 write.csv(tab2dm,
 	"D:\\MIDCAB_DM\\tables\\tab2dm.csv")
 
+# now to look at survival according to DM.
 
+glimpse(df1)
 
+df1 = df1 %>% rename(died = Died_total)
+
+df1$surv_years = (1 + df1$Survival_days)/365.24
+
+df1 %>% count(died)
+
+s = survfit(Surv(surv_years, died) ~ 
+	diabetes, data = df1)
+
+# KM curve according to DM status.
+
+ggsurvplot(s,
+	risk.table = T,
+	censor.size = 0,
+	conf.int = T,
+	xlim = c(0,20))
+
+summary(s, times = c(0,5,10,15,20))
+
+#                diabetes=0 
+# time n.risk n.event survival std.err lower 95% CI upper 95% CI
+#    0   1061       0    1.000 0.00000        1.000        1.000
+#    5    816      59    0.938 0.00781        0.923        0.954
+#   10    561      63    0.854 0.01241        0.830        0.879
+#   15    272      42    0.771 0.01666        0.739        0.804
+#   20    118      21    0.694 0.02221        0.652        0.739
+
+#                diabetes=1 
+# time n.risk n.event survival std.err lower 95% CI upper 95% CI
+#    0    329       0    1.000  0.0000        1.000        1.000
+#    5    241      28    0.904  0.0172        0.871        0.939
+#   10    156      27    0.788  0.0259        0.739        0.840
+#   15     59      37    0.549  0.0383        0.479        0.630
+#   20     12      14    0.369  0.0486        0.285        0.478
